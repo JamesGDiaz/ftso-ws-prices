@@ -17,4 +17,5 @@ public class Trade {
     private Long timestamp;
     private Double volumeWeightByExchangeBaseQuote;
     private Double volumeWeightByExchangeBase;
+
 }

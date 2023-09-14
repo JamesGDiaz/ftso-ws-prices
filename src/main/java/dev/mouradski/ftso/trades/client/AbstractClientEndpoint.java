@@ -3,6 +3,7 @@ package dev.mouradski.ftso.trades.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+
 import dev.mouradski.ftso.trades.model.Ticker;
 import dev.mouradski.ftso.trades.model.Trade;
 import dev.mouradski.ftso.trades.service.TickerService;
@@ -32,6 +33,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 
 import static dev.mouradski.ftso.trades.utils.Constants.SYMBOLS;
+
+import dev.lightftso.dbsender.DbSender;
 
 @Slf4j
 public abstract class AbstractClientEndpoint {
@@ -76,6 +79,9 @@ public abstract class AbstractClientEndpoint {
     protected boolean subscribeTicker;
 
     private volatile int reconnectionAttempts = 0;
+
+    /* Quest */
+    private final DbSender dbSender = new DbSender(getExchange());
 
     protected AbstractClientEndpoint() {
         Thread shutdownHook = new Thread(() -> {
@@ -175,6 +181,8 @@ public abstract class AbstractClientEndpoint {
     private void pushTrade(Trade trade) {
         this.lastTradeTime = System.currentTimeMillis();
         this.tradeService.pushTrade(trade);
+
+        this.dbSender.send(trade);
     }
 
     protected void pushTicker(Ticker ticker) {
@@ -308,6 +316,7 @@ public abstract class AbstractClientEndpoint {
                     getTimeout(),
                     TimeUnit.SECONDS);
 
+            this.dbSender.connect();
             this.connect();
         }
     }
