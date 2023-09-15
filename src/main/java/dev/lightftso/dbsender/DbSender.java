@@ -71,7 +71,7 @@ public class DbSender {
             return;
         try {
             var tradeList = tradeBatch.get();
-            tradeList.stream().sorted(Comparator.comparing(Trade::getTimestamp));
+            tradeList.sort(Comparator.comparing(Trade::getTimestamp));
             tradeList.forEach(this::writeTradeToBuffer);
             sender.flush();
             
