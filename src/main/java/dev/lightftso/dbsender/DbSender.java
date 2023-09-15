@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import dev.lightftso.utils.EpochUtils;
 import dev.mouradski.ftso.trades.model.Trade;
@@ -20,14 +19,9 @@ import io.questdb.client.Sender.LineSenderBuilder;
 
 @Slf4j
 public class DbSender {
-    @ConfigProperty(name = "flare.network")
     private String flareNetwork;
-
-    @ConfigProperty(name = "questdb.ilp.host")
     private String questDbIlpHost;
-
-    @ConfigProperty(name = "questdb.ilp.port")
-    private int questDbIlpPort;
+    private Integer questDbIlpPort;
 
     public LineSenderBuilder senderBuilder;
 
@@ -47,13 +41,13 @@ public class DbSender {
 
     public DbSender(String exchangeName) {
         this.exchangeName = exchangeName;
-
         Config config = ConfigProvider.getConfig();
         flareNetwork = config.getValue("flare.network", String.class);
-        questDbIlpHost = config.getValue("questdb.ilp.host", String.class);
-        questDbIlpPort = config.getValue("questdb.ilp.port", Integer.class);
-        epochUtils = new EpochUtils(flareNetwork);
+        questDbIlpHost = config.getValue("qdb.ilp.host", String.class);
+        questDbIlpPort = config.getValue("qdb.ilp.port", Integer.class);
+        epochUtils = new EpochUtils(this.flareNetwork);
         cb.set(epochUtils.getRunningEpoch());
+        System.out.printf("%s %s %d\n", flareNetwork, questDbIlpHost, questDbIlpPort);
     }
 
     public void connect() {
