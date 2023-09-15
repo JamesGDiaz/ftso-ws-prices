@@ -47,7 +47,6 @@ public class DbSender {
         questDbIlpPort = config.getValue("qdb.ilp.port", Integer.class);
         epochUtils = new EpochUtils(this.flareNetwork);
         cb.set(epochUtils.getRunningEpoch());
-        System.out.printf("%s %s %d\n", flareNetwork, questDbIlpHost, questDbIlpPort);
     }
 
     public void connect() {
