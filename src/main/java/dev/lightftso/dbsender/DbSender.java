@@ -3,6 +3,8 @@ package dev.lightftso.dbsender;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,7 +29,7 @@ public class DbSender {
 
     public Sender sender;
 
-    private final int bufferCapacity = 1024 * 1024 * 64;
+    private final int bufferCapacity = 1024 * 128;
 
     protected volatile AtomicInteger tradeCount = new AtomicInteger(0);
     private static AtomicInteger totalTradeCount = new AtomicInteger(0);
@@ -52,10 +54,8 @@ public class DbSender {
     public void connect() {
         log.debug("Building QuestDB for {} sender to {}:{}", this.exchangeName, this.questDbIlpHost,
                 this.questDbIlpPort);
-        senderBuilder = Sender.builder().address(questDbIlpHost).port(questDbIlpPort)
-                .bufferCapacity(this.bufferCapacity);
-
-        sender = senderBuilder.build();
+        sender = Sender.builder().address(questDbIlpHost).port(questDbIlpPort)
+                .bufferCapacity(this.bufferCapacity).build();
 
         var executor = Executors.newSingleThreadScheduledExecutor();
         var epochDelta = epochUtils.getDeltaFromTimestamp(System.currentTimeMillis());
@@ -65,7 +65,22 @@ public class DbSender {
                 TimeUnit.MILLISECONDS);
     }
 
-    public void send(Trade trade) {
+    public void sendBatch(Optional<List<Trade>> tradeBatch) {
+        if (!tradeBatch.isPresent())
+            return;
+        try {
+            var size = tradeBatch.get().size();
+            tradeBatch.get().forEach(this::writeTradeToBuffer);
+            sender.flush();
+
+            tradeCount.addAndGet(size);
+            totalTradeCount.addAndGet(size);
+        } catch (NoSuchElementException e) {
+        }
+
+    }
+
+    private void writeTradeToBuffer(Trade trade) {
         sender.table("trades")
                 .symbol("exchange", trade.getExchange())
                 .symbol("base", trade.getBase())
@@ -75,6 +90,10 @@ public class DbSender {
                 .longColumn("epoch", epochUtils.getEpochFromTimestamp(trade.getTimestamp()))
                 .boolColumn("stablecoin", isBaseStablecoin(trade.getBase()))
                 .at(trade.getTimestamp() * 1000000L);
+    }
+
+    public void send(Trade trade) {
+        writeTradeToBuffer(trade);
         sender.flush();
         tradeCount.incrementAndGet();
         totalTradeCount.incrementAndGet();
@@ -83,7 +102,7 @@ public class DbSender {
     private void printTradeCount() {
         var lastEpochId = epochUtils.getLastFinishedEpoch();
         if (tradeCount.getAndSet(0) <= 0) {
-            log.warn("Didn't receive any trades in epoch {} trades from {}", lastEpochId, exchangeName);
+            log.warn("Didn't receive any trades from {} in epoch {}", exchangeName, lastEpochId);
         }
 
         if (cb.getAndSet(epochUtils.getRunningEpoch()) < epochUtils.getRunningEpoch()) {

@@ -129,10 +129,13 @@ public abstract class AbstractClientEndpoint {
 
             if (!this.pong(message)) {
                 if (subscribeTrade) {
-                    this.mapTrade(message).ifPresent(tradeList -> tradeList.forEach(this::pushTrade));
+                    var tradeBatch = this.mapTrade(message);
+                    this.dbSender.sendBatch(tradeBatch);
+                    tradeBatch.ifPresent(tradeList -> tradeList.forEach(this::pushTrade));
                 }
                 if (subscribeTicker) {
-                    this.mapTicker(message).ifPresent(tickerList -> tickerList.forEach(this::pushTicker));
+                    var tickerBatch = this.mapTicker(message);
+                    tickerBatch.ifPresent(tickerList -> tickerList.forEach(this::pushTicker));
                 }
             }
 
