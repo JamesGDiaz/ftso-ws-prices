@@ -50,7 +50,7 @@ public class DbSender {
     }
 
     public void connect() {
-        log.info("Building QuestDB for {} sender to {}:{}", this.exchangeName, this.questDbIlpHost,
+        log.debug("Building QuestDB for {} sender to {}:{}", this.exchangeName, this.questDbIlpHost,
                 this.questDbIlpPort);
         senderBuilder = Sender.builder().address(questDbIlpHost).port(questDbIlpPort)
                 .bufferCapacity(this.bufferCapacity);
