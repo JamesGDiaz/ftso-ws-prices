@@ -2,6 +2,7 @@ package dev.lightftso.dbsender;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -69,10 +70,12 @@ public class DbSender {
         if (!tradeBatch.isPresent())
             return;
         try {
-            var size = tradeBatch.get().size();
-            tradeBatch.get().forEach(this::writeTradeToBuffer);
+            var tradeList = tradeBatch.get();
+            tradeList.stream().sorted(Comparator.comparing(Trade::getTimestamp));
+            tradeList.forEach(this::writeTradeToBuffer);
             sender.flush();
-
+            
+            var size = tradeList.size();
             tradeCount.addAndGet(size);
             totalTradeCount.addAndGet(size);
         } catch (NoSuchElementException e) {
