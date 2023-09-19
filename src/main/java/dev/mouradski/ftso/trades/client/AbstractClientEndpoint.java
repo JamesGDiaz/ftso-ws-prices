@@ -185,7 +185,7 @@ public abstract class AbstractClientEndpoint {
         this.lastTradeTime = System.currentTimeMillis();
         this.tradeService.pushTrade(trade);
 
-        this.dbSender.send(trade);
+        //this.dbSender.send(trade);
     }
 
     protected void pushTicker(Ticker ticker) {
