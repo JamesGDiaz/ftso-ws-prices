@@ -130,7 +130,7 @@ public abstract class AbstractClientEndpoint {
             if (!this.pong(message)) {
                 if (subscribeTrade) {
                     var tradeBatch = this.mapTrade(message);
-                    this.dbSender.sendBatch(tradeBatch);
+                    tradeBatch.ifPresent(tradeList -> this.dbSender.sendBatch(tradeList));
                     tradeBatch.ifPresent(tradeList -> tradeList.forEach(this::pushTrade));
                 }
                 if (subscribeTicker) {
@@ -184,8 +184,6 @@ public abstract class AbstractClientEndpoint {
     private void pushTrade(Trade trade) {
         this.lastTradeTime = System.currentTimeMillis();
         this.tradeService.pushTrade(trade);
-
-        //this.dbSender.send(trade);
     }
 
     protected void pushTicker(Ticker ticker) {

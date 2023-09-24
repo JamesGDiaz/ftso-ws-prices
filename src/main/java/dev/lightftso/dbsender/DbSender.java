@@ -66,21 +66,18 @@ public class DbSender {
                 TimeUnit.MILLISECONDS);
     }
 
-    public void sendBatch(Optional<List<Trade>> tradeBatch) {
-        if (!tradeBatch.isPresent())
+    public void sendBatch(List<Trade> tradeList) {
+        if (tradeList.stream().anyMatch(t -> t.someFieldsAreNull())) {
             return;
-        try {
-            var tradeList = tradeBatch.get();
-            tradeList.sort(Comparator.comparing(Trade::getTimestamp));
-            tradeList.forEach(this::writeTradeToBuffer);
-            sender.flush();
-            
-            var size = tradeList.size();
-            tradeCount.addAndGet(size);
-            totalTradeCount.addAndGet(size);
-        } catch (NoSuchElementException e) {
         }
+        if (tradeList.size() > 1)
+            tradeList.sort(Comparator.comparing(Trade::getTimestamp));
+        tradeList.forEach(this::writeTradeToBuffer);
+        sender.flush();
 
+        var size = tradeList.size();
+        tradeCount.addAndGet(size);
+        totalTradeCount.addAndGet(size);
     }
 
     private void writeTradeToBuffer(Trade trade) {

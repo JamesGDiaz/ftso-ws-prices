@@ -18,4 +18,8 @@ public class Trade {
     private Double volumeWeightByExchangeBaseQuote;
     private Double volumeWeightByExchangeBase;
 
+    public boolean someFieldsAreNull() {
+        return ((timestamp == null) || (exchange == null) || (base == null) || (quote == null) || (price == null)
+                || (amount == null));
+    }
 }
