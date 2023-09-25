@@ -3,7 +3,6 @@ package dev.mouradski.ftso.trades.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-
 import dev.mouradski.ftso.trades.model.Ticker;
 import dev.mouradski.ftso.trades.model.Trade;
 import dev.mouradski.ftso.trades.service.TickerService;
@@ -34,8 +33,6 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 
 import static dev.mouradski.ftso.trades.utils.Constants.SYMBOLS;
-
-import dev.lightftso.dbsender.DbSender;
 
 @Slf4j
 public abstract class AbstractClientEndpoint {
@@ -83,9 +80,6 @@ public abstract class AbstractClientEndpoint {
 
     private volatile int reconnectionAttempts = 0;
 
-    /* Quest */
-    private final DbSender dbSender = new DbSender(getExchange());
-
     protected AbstractClientEndpoint() {
         Thread shutdownHook = new Thread(() -> {
             if (this.enabled) {
@@ -132,13 +126,10 @@ public abstract class AbstractClientEndpoint {
 
             if (!this.pong(message)) {
                 if (subscribeTrade) {
-                    var tradeBatch = this.mapTrade(message);
-                    tradeBatch.ifPresent(tradeList -> this.dbSender.sendBatch(tradeList));
-                    tradeBatch.ifPresent(tradeList -> tradeList.forEach(this::pushTrade));
+                    this.mapTrade(message).ifPresent(tradeList -> tradeList.forEach(this::pushTrade));
                 }
                 if (subscribeTicker) {
-                    var tickerBatch = this.mapTicker(message);
-                    tickerBatch.ifPresent(tickerList -> tickerList.forEach(this::pushTicker));
+                    this.mapTicker(message).ifPresent(tickerList -> tickerList.forEach(this::pushTicker));
                 }
             }
 
@@ -320,7 +311,6 @@ public abstract class AbstractClientEndpoint {
                     getTimeout(),
                     TimeUnit.SECONDS);
 
-            this.dbSender.connect();
             this.connect();
         }
     }
