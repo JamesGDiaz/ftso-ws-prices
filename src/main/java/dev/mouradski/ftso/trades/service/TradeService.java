@@ -7,6 +7,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
+import dev.lightftso.dbsender.QuestDBService;
 
 @Slf4j
 @ApplicationScoped
@@ -20,11 +21,16 @@ public class TradeService {
     @Inject
     VolumesService volumesService;
 
+    @Inject
+    private QuestDBService questDbService = new QuestDBService();
+
     public void pushTrade(Trade trade) {
-        var weights = volumesService.updateVolumes(trade.getExchange(), trade.getBase(), trade.getQuote(), trade.getAmount());
+        /*var weights = volumesService.updateVolumes(trade.getExchange(), trade.getBase(), trade.getQuote(), trade.getAmount());
         trade.setVolumeWeightByExchangeBaseQuote(weights.getLeft());
-        trade.setVolumeWeightByExchangeBase(weights.getRight());
+        trade.setVolumeWeightByExchangeBase(weights.getRight());*/
         tradeServer.broadcast(trade);
         tradeConsumer.forEach(consumer -> consumer.processTrade(trade));
+
+        questDbService.writeTradeToBuffer(trade);
     }
 }
